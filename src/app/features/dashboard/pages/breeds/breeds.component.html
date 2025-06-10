@@ -1,0 +1,12 @@
+<div class="row m-5">
+  <div class="col-md-12">
+    <h2>Razas</h2>
+    <mat-divider></mat-divider>
+  </div>
+
+  <app-filters (sendData)="refreshData($event)"></app-filters>
+
+  <div class="col-md-12 pt-5">
+    <app-table [dataSource]="dataSource" [displayedColumns]="displayedColumns"></app-table>
+  </div>
+</div>

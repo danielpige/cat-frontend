@@ -1,0 +1,25 @@
+.carousel {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  border-radius: 10px;
+  height: 300px;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+  width: 100%;
+}
+
+.carousel-item {
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+.carousel-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}

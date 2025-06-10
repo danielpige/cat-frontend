@@ -1,0 +1,38 @@
+<div class="container-flex">
+  <div class="row m-5">
+    <div class="col-md-12">
+      <h2>Perfil de usuario</h2>
+
+      <mat-divider></mat-divider>
+    </div>
+
+    <div class="col-md-12 mt-5">
+      <div class="row">
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Email</mat-label>
+            <input matInput readonly placeholder="Email" [value]="currentUser?.email" />
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Usuario</mat-label>
+            <input matInput readonly placeholder="Usuario" [value]="currentUser?.username" />
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Nombre completo</mat-label>
+            <input matInput readonly placeholder="Nombre completo" [value]="currentUser?.fullname" />
+          </mat-form-field>
+        </div>
+
+        <div class="col-md-3 pt-3">
+          <mat-slide-toggle [disabled]="true" [checked]="currentUser?.enable">Habilitado</mat-slide-toggle>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

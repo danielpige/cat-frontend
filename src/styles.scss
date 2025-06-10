@@ -1,1 +1,43 @@
 /* You can add global styles to this file, and also import other style files */
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+// SnackBar
+
+.snackbar-success {
+  background-color: #43a047;
+  color: #fff;
+  font-weight: bold;
+}
+
+.snackbar-error {
+  background-color: #e53935;
+  color: #fff;
+  font-weight: bold;
+}
+
+.snackbar-info {
+  background-color: #1e88e5;
+  color: #fff;
+  font-weight: bold;
+}
+
+.snackbar-warn {
+  background-color: #fbc02d;
+  color: #000;
+  font-weight: bold;
+}
+
+
+// Loader modal
+
+.transparent-dialog .mat-dialog-container {
+  background: transparent;
+  box-shadow: none;
+}
+
+.dark-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}

@@ -1,0 +1,14 @@
+<div class="row pt-4">
+  <div class="col-md-4">
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Busqueda</mat-label>
+      <input #query matInput placeholder="¿Qué raza quieres buscar?" />
+    </mat-form-field>
+  </div>
+
+  <div class="col-md 2">
+    <button (click)="search(query.value)" mat-fab aria-label="Buscar">
+      <mat-icon>search</mat-icon>
+    </button>
+  </div>
+</div>
