@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LoginForm, LoginValues } from '../../../../core/models/user.model';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -13,6 +13,7 @@ import { SnackBarService } from '../../../../core/services/snack-bar.service';
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup<LoginForm>;
+  hidePassword = signal(true);
 
   constructor(
     private fb: FormBuilder,
@@ -33,6 +34,11 @@ export class LoginComponent implements OnInit {
         validators: [Validators.required, Validators.minLength(5)],
       }),
     });
+  }
+
+  clickEventPassword(event: MouseEvent) {
+    this.hidePassword.set(!this.hidePassword());
+    event.stopPropagation();
   }
 
   submitForm(): void {

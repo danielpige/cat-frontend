@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TableComponent } from './table.component';
 import { MatTableModule } from '@angular/material/table';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Component, Pipe, PipeTransform } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { Breed } from '../../../core/models/breeds.model';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Pipe({ name: 'translateBreedKeyPipe' })
 class MockTranslateBreedKeyPipe implements PipeTransform {
@@ -65,7 +66,7 @@ describe('TableComponent (DOM)', () => {
 
     await TestBed.configureTestingModule({
       declarations: [TableComponent, MockTranslateBreedKeyPipe, MockBreedDetailComponent],
-      imports: [MatTableModule, BrowserAnimationsModule],
+      imports: [MatTableModule, MatTooltipModule, MatDialogModule, BrowserAnimationsModule],
       providers: [{ provide: MatDialog, useValue: mockDialog }],
     }).compileComponents();
 

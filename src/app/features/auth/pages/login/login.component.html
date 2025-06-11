@@ -16,7 +16,22 @@
         <div class="col-md-12 mt-3">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Contraseña</mat-label>
-            <input (keydown.enter)="submitForm()" matInput formControlName="password" placeholder="Contraseña" type="password" />
+            <input
+              (keydown.enter)="submitForm()"
+              matInput
+              formControlName="password"
+              placeholder="Contraseña"
+              [type]="hidePassword() ? 'password' : 'text'"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              (click)="clickEventPassword($event)"
+              [attr.aria-label]="'Hide password'"
+              [attr.aria-pressed]="hidePassword()"
+            >
+              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
             <mat-error>La contraseña es requerida.</mat-error>
           </mat-form-field>
         </div>
