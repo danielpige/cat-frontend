@@ -5,7 +5,7 @@ export interface User {
   username: string;
   fullname?: string;
   enable?: boolean;
-  password: string;
+  password?: string;
   email?: string;
 }
 

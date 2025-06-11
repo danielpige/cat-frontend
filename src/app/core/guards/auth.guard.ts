@@ -9,10 +9,7 @@ import { SnackBarService } from '../services/snack-bar.service';
 export class AuthGuard implements CanActivate {
   constructor(private router: Router, private authSvc: AuthService, private snackBar: SnackBarService) {}
 
-  canActivate(
-    route: ActivatedRouteSnapshot,
-    state: RouterStateSnapshot
-  ): boolean | UrlTree {
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean | UrlTree {
     if (this.authSvc.isAuthenticated()) {
       return true;
     }
@@ -21,7 +18,6 @@ export class AuthGuard implements CanActivate {
 
     this.authSvc.logout();
 
-    // Redirige al login si no hay token
     return this.router.createUrlTree(['/auth/login']);
   }
 }

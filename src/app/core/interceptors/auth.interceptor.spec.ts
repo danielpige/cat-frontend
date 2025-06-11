@@ -1,130 +1,79 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { HTTP_INTERCEPTORS, HttpClient, HttpRequest, HttpEvent, HttpHandler } from '@angular/common/http';
-import { Observable } from 'rxjs'; // Necesario para el último test
 import { AuthInterceptor } from './auth.interceptor';
-import { TokenKeys } from '../enums/tokenKey.enum'; // Asegúrate de que esta ruta sea correcta
-import { environment } from '../../../environments/environment'; // Asegúrate de que esta ruta sea correcta
+import { HTTP_INTERCEPTORS, HttpClient, HttpHandler, HttpRequest, HttpEvent, HttpResponse } from '@angular/common/http';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { environment } from '../../../environments/environment';
+import { TokenKeys } from '../enums/tokenKey.enum';
 
 describe('AuthInterceptor', () => {
+  let httpMock: HttpTestingController;
   let httpClient: HttpClient;
-  let httpTestingController: HttpTestingController;
-  const dummyToken = 'miTokenDePrueba123';
-  const apiUrl = environment.apiUrl; // Obtenemos la URL de la API del entorno
+
+  const API_URL = environment.apiUrl;
 
   beforeEach(() => {
-    // Limpiamos localStorage antes de cada prueba para asegurar un estado limpio
-    localStorage.clear();
-
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule], // HttpClientTestingModule es crucial para simular peticiones HTTP
+      imports: [HttpClientTestingModule],
       providers: [
-        // Aquí le decimos a Angular que use nuestro AuthInterceptor
         {
           provide: HTTP_INTERCEPTORS,
           useClass: AuthInterceptor,
-          multi: true, // Importante: Permite que se proporcionen múltiples interceptores
+          multi: true,
         },
       ],
     });
 
-    // Inyectamos HttpClient y HttpTestingController del entorno de pruebas
+    httpMock = TestBed.inject(HttpTestingController);
     httpClient = TestBed.inject(HttpClient);
-    httpTestingController = TestBed.inject(HttpTestingController);
   });
 
-  // Verificamos que no queden peticiones HTTP pendientes al final de cada prueba
   afterEach(() => {
-    httpTestingController.verify();
+    localStorage.clear();
+    httpMock.verify();
   });
 
-  it('should be created', () => {
-    // Verificamos que el interceptor puede ser instanciado correctamente
-    // Accedemos a la instancia del interceptor a través del token HTTP_INTERCEPTORS
-    const interceptor = TestBed.inject(HTTP_INTERCEPTORS)[0] as AuthInterceptor;
-    expect(interceptor).toBeTruthy();
+  it('debería agregar el token de autorización para peticiones API', () => {
+    const mockToken = 'mocked_token';
+    localStorage.setItem(TokenKeys.AUTH_TOKEN, mockToken);
+
+    httpClient.get(`${API_URL}/test-endpoint`).subscribe((response) => {
+      expect(response).toBeTruthy();
+    });
+
+    const httpRequest = httpMock.expectOne(`${API_URL}/test-endpoint`);
+
+    expect(httpRequest.request.headers.has('Authorization')).toBeTrue();
+    expect(httpRequest.request.headers.get('Authorization')).toBe(`Bearer ${mockToken}`);
+
+    httpRequest.flush({ data: 'ok' });
   });
 
-  // Escenario 1: Hay un token y la petición es a la API (debe añadir el encabezado)
-  describe('cuando hay un token y la petición es a la API', () => {
-    beforeEach(() => {
-      // Configuramos el localStorage con un token de prueba
-      localStorage.setItem(TokenKeys.AUTH_TOKEN, dummyToken);
+  it('NO debería agregar el token si la URL no pertenece a la API', () => {
+    const mockToken = 'mocked_token';
+    localStorage.setItem(TokenKeys.AUTH_TOKEN, mockToken);
+
+    httpClient.get(`https://externo.com/recurso`).subscribe((response) => {
+      expect(response).toBeTruthy();
     });
 
-    it('debería añadir un encabezado de Autorización', () => {
-      // Realizamos una petición HTTP simulada a la URL de nuestra API
-      httpClient.get(`${apiUrl}/data`).subscribe();
+    const httpRequest = httpMock.expectOne(`https://externo.com/recurso`);
 
-      // Esperamos que haya exactamente una petición a la URL correcta y la "capturamos"
-      const req = httpTestingController.expectOne(`${apiUrl}/data`);
+    expect(httpRequest.request.headers.has('Authorization')).toBeFalse();
 
-      // Verificamos que el encabezado 'Authorization' fue añadido
-      expect(req.request.headers.has('Authorization')).toBeTruthy();
-      // Verificamos que el valor del encabezado sea el correcto (Bearer + token)
-      expect(req.request.headers.get('Authorization')).toBe(`Bearer ${dummyToken}`);
-
-      // Resolvemos la petición con una respuesta vacía para que no quede pendiente
-      req.flush({});
-    });
+    httpRequest.flush({ data: 'ok' });
   });
 
-  // Escenario 2: No hay token en localStorage (no debe añadir el encabezado)
-  describe('cuando no hay token', () => {
-    it('NO debería añadir un encabezado de Autorización a las peticiones a la API', () => {
-      // Aseguramos que no hay token en localStorage (ya lo hace localStorage.clear() en beforeEach)
+  it('NO debería agregar el token si no hay token en localStorage', () => {
+    localStorage.removeItem(TokenKeys.AUTH_TOKEN);
 
-      // Realizamos una petición HTTP simulada a la URL de nuestra API
-      httpClient.get(`${apiUrl}/public-data`).subscribe();
-
-      const req = httpTestingController.expectOne(`${apiUrl}/public-data`);
-
-      // Verificamos que el encabezado 'Authorization' NO fue añadido
-      expect(req.request.headers.has('Authorization')).toBeFalsy();
-
-      req.flush({});
-    });
-  });
-
-  // Escenario 3: Hay token, pero la petición NO es a la API (no debe añadir el encabezado)
-  describe('cuando hay un token pero la petición NO es a la API', () => {
-    beforeEach(() => {
-      // Configuramos el localStorage con un token de prueba
-      localStorage.setItem(TokenKeys.AUTH_TOKEN, dummyToken);
+    httpClient.get(`${API_URL}/otra-ruta`).subscribe((response) => {
+      expect(response).toBeTruthy();
     });
 
-    it('NO debería añadir un encabezado de Autorización a las peticiones externas', () => {
-      const externalUrl = 'https://api.ejemplo-externo.com/data';
+    const httpRequest = httpMock.expectOne(`${API_URL}/otra-ruta`);
 
-      // Realizamos una petición HTTP simulada a una URL externa
-      httpClient.get(externalUrl).subscribe();
+    expect(httpRequest.request.headers.has('Authorization')).toBeFalse();
 
-      const req = httpTestingController.expectOne(externalUrl);
-
-      // Verificamos que el encabezado 'Authorization' NO fue añadido
-      expect(req.request.headers.has('Authorization')).toBeFalsy();
-
-      req.flush({});
-    });
-  });
-
-  // Escenario 4: La petición es clonada correctamente si no hay token o no es una petición a la API
-  it('debería pasar la petición original si no hay token o no es una petición a la API', () => {
-    // Creamos una petición HTTP de prueba
-    const originalRequest = new HttpRequest('GET', `${apiUrl}/some-data`);
-    // Creamos un mock para el HttpHandler (el 'next' en el interceptor)
-    const nextHandler = {
-      handle: jasmine.createSpy('handle').and.returnValue(new Observable<HttpEvent<any>>()),
-    };
-
-    // Obtenemos una instancia del interceptor
-    const interceptor = TestBed.inject(HTTP_INTERCEPTORS)[0] as AuthInterceptor;
-
-    // Ejecutamos el interceptor sin un token en localStorage
-    localStorage.clear(); // Aseguramos que no hay token
-    interceptor.intercept(originalRequest, nextHandler as HttpHandler);
-
-    // Verificamos que el método 'handle' del siguiente manejador fue llamado con la petición original (sin modificar)
-    expect(nextHandler.handle).toHaveBeenCalledWith(originalRequest);
+    httpRequest.flush({ data: 'ok' });
   });
 });

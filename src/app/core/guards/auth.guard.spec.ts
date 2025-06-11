@@ -1,145 +1,59 @@
-// src/app/services/encryption.service.spec.ts
 import { TestBed } from '@angular/core/testing';
-import { EncryptionService } from '../services/encription.service';
-import * as CryptoJS from 'crypto-js';
+import { Router } from '@angular/router';
+import { AuthGuard } from './auth.guard';
+import { AuthService } from '../services/auth.service';
+import { SnackBarService } from '../services/snack-bar.service';
+import { RouterTestingModule } from '@angular/router/testing';
 
-describe('EncryptionService', () => {
-  let service: EncryptionService;
-  let localStorageStore: { [key: string]: string };
-
-  const testKey = 'miClaveDePrueba';
-  const testValue = 'Este es un valor de prueba secreto.';
-  const secretKey = 'S3CR3TK3Y*';
-
-  const hashedTestKey = CryptoJS.SHA256(testKey).toString();
+describe('AuthGuard', () => {
+  let guard: AuthGuard;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
+  let routerSpy: jasmine.SpyObj<Router>;
+  let snackBarSpy: jasmine.SpyObj<SnackBarService>;
 
   beforeEach(() => {
-    localStorageStore = {};
-
-    spyOn(localStorage, 'getItem').and.callFake((key: string) => localStorageStore[key] || null);
-    spyOn(localStorage, 'setItem').and.callFake((key: string, value: string) => {
-      localStorageStore[key] = value;
-    });
-    spyOn(localStorage, 'removeItem').and.callFake((key: string) => {
-      delete localStorageStore[key];
-    });
-    spyOn(localStorage, 'clear').and.callFake(() => {
-      localStorageStore = {};
-    });
+    const authSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'logout']);
+    const routerMock = jasmine.createSpyObj('Router', ['createUrlTree']);
+    const snackBarMock = jasmine.createSpyObj('SnackBarService', ['info']);
 
     TestBed.configureTestingModule({
-      providers: [EncryptionService],
+      imports: [RouterTestingModule],
+      providers: [
+        AuthGuard,
+        { provide: AuthService, useValue: authSpy },
+        { provide: Router, useValue: routerMock },
+        { provide: SnackBarService, useValue: snackBarMock },
+      ],
     });
 
-    service = TestBed.inject(EncryptionService);
+    guard = TestBed.inject(AuthGuard);
+    authServiceSpy = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+    routerSpy = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    snackBarSpy = TestBed.inject(SnackBarService) as jasmine.SpyObj<SnackBarService>;
   });
 
-  // ---
+  it('debería permitir el acceso si el usuario está autenticado', () => {
+    authServiceSpy.isAuthenticated.and.returnValue(true);
 
-  it('debería ser creado', () => {
-    expect(service).toBeTruthy();
+    const result = guard.canActivate({} as any, {} as any);
+
+    expect(result).toBeTrue();
+    expect(authServiceSpy.isAuthenticated).toHaveBeenCalled();
+    expect(snackBarSpy.info).not.toHaveBeenCalled();
+    expect(authServiceSpy.logout).not.toHaveBeenCalled();
   });
 
-  describe('encrypt', () => {
-    it('debería encriptar un valor y ser desencriptable', () => {
-      const encrypted = service.encrypt(testValue);
-      expect(encrypted).toBeTruthy();
-      expect(encrypted).not.toBe(testValue);
+  it('debería denegar el acceso, mostrar snackbar y redirigir si el usuario no está autenticado', () => {
+    authServiceSpy.isAuthenticated.and.returnValue(false);
+    const fakeUrlTree = {} as any;
+    routerSpy.createUrlTree.and.returnValue(fakeUrlTree);
 
-      const decrypted = CryptoJS.AES.decrypt(encrypted, secretKey).toString(CryptoJS.enc.Utf8);
-      expect(decrypted).toBe(testValue);
-    });
-  });
+    const result = guard.canActivate({} as any, {} as any);
 
-  describe('decrypt', () => {
-    it('debería desencriptar un valor encriptado correctamente', () => {
-      const encrypted = service.encrypt(testValue);
-      const decrypted = service.decrypt(encrypted);
-      expect(decrypted).toBe(testValue);
-    });
-
-    it('debería devolver una cadena vacía y NO registrar un error si el valor encriptado es una cadena inválida', () => {
-      const consoleErrorSpy = spyOn(console, 'error');
-      const invalidCiphertext = 'un_texto_cualquiera_sin_formato_cryptojs';
-      const decrypted = service.decrypt(invalidCiphertext);
-
-      expect(decrypted).toBe('');
-      expect(consoleErrorSpy).not.toHaveBeenCalled(); // Expectativa: NO se llama a console.error
-    });
-
-    it('debería devolver una cadena vacía y registrar un error para valor encriptado nulo', () => {
-      const consoleErrorSpy = spyOn(console, 'error');
-      const decryptedNull = service.decrypt(null as any);
-
-      expect(decryptedNull).toBe('');
-      expect(consoleErrorSpy).toHaveBeenCalled(); // Expectativa: SÍ se llama a console.error
-    });
-
-    it('debería devolver una cadena vacía y registrar un error para valor encriptado indefinido', () => {
-      const consoleErrorSpy = spyOn(console, 'error');
-      const decryptedUndefined = service.decrypt(undefined as any);
-
-      expect(decryptedUndefined).toBe('');
-      expect(consoleErrorSpy).toHaveBeenCalled(); // Expectativa: SÍ se llama a console.error
-    });
-  });
-
-  describe('private hashKey', () => {
-    it('debería generar un hash determinista SHA256 para una clave', () => {
-      expect(hashedTestKey).toBe(CryptoJS.SHA256(testKey).toString());
-    });
-  });
-
-  describe('setEncryptedItem', () => {
-    it('debería encriptar el valor y almacenarlo en localStorage bajo una clave hasheada', () => {
-      service.setEncryptedItem(testKey, testValue);
-
-      expect(localStorage.setItem).toHaveBeenCalledWith(hashedTestKey, jasmine.any(String));
-
-      const storedEncryptedValue = localStorageStore[hashedTestKey];
-      expect(storedEncryptedValue).toBeTruthy();
-      const decryptedStoredValue = service.decrypt(storedEncryptedValue);
-      expect(decryptedStoredValue).toBe(testValue);
-    });
-  });
-
-  describe('getDecryptedItem', () => {
-    it('debería recuperar y desencriptar un valor de localStorage', () => {
-      const encryptedValueToStore = service.encrypt(testValue);
-      localStorageStore[hashedTestKey] = encryptedValueToStore;
-
-      const retrievedValue = service.getDecryptedItem(testKey);
-
-      expect(localStorage.getItem).toHaveBeenCalledWith(hashedTestKey);
-      expect(retrievedValue).toBe(testValue);
-    });
-
-    it('debería devolver null si la clave no existe en localStorage', () => {
-      const retrievedValue = service.getDecryptedItem('claveInexistente');
-
-      expect(localStorage.getItem).toHaveBeenCalledWith(CryptoJS.SHA256('claveInexistente').toString());
-      expect(retrievedValue).toBeNull();
-    });
-
-    it('debería devolver una cadena vacía y NO registrar un error si el valor almacenado es una cadena inválida que no se puede desencriptar', () => {
-      const consoleErrorSpy = spyOn(console, 'error');
-      localStorageStore[hashedTestKey] = 'valor_corrupto_no_encriptado';
-
-      const retrievedValue = service.getDecryptedItem(testKey);
-
-      expect(retrievedValue).toBe('');
-      expect(consoleErrorSpy).not.toHaveBeenCalled(); // Expectativa: NO se llama a console.error
-    });
-  });
-
-  describe('removeEncryptedItem', () => {
-    it('debería eliminar el elemento de localStorage por su clave hasheada', () => {
-      localStorageStore[hashedTestKey] = 'algún_valor';
-
-      service.removeEncryptedItem(testKey);
-
-      expect(localStorage.removeItem).toHaveBeenCalledWith(hashedTestKey);
-      expect(localStorageStore[hashedTestKey]).toBeUndefined();
-    });
+    expect(authServiceSpy.isAuthenticated).toHaveBeenCalled();
+    expect(snackBarSpy.info).toHaveBeenCalledWith('Por favor iniciar sesión.');
+    expect(authServiceSpy.logout).toHaveBeenCalled();
+    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
+    expect(result).toBe(fakeUrlTree);
   });
 });

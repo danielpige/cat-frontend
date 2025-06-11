@@ -11,7 +11,6 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const token = localStorage.getItem(TokenKeys.AUTH_TOKEN);
 
-    // Solo agrega el token si la petición es a tu API
     const isApiRequest = request.url.startsWith(this.API_URL);
 
     if (token && isApiRequest) {

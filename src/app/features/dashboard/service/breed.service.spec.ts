@@ -1,16 +1,74 @@
-// import { TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { BreedService } from './breed.service';
+import { HttpService } from '../../../core/services/http.service';
+import { of } from 'rxjs';
+import { ApiResponse } from '../../../core/models/apiResponse.model';
+import { Breed } from '../../../core/models/breeds.model';
+import { Images } from '../../../core/models/images.model';
 
-// import { BreedService } from './breed.service';
+describe('BreedService', () => {
+  let service: BreedService;
+  let httpServiceSpy: jasmine.SpyObj<HttpService>;
 
-// describe('BreedService', () => {
-//   let service: BreedService;
+  beforeEach(() => {
+    const spy = jasmine.createSpyObj('HttpService', ['get']);
 
-//   beforeEach(() => {
-//     TestBed.configureTestingModule({});
-//     service = TestBed.inject(BreedService);
-//   });
+    TestBed.configureTestingModule({
+      providers: [BreedService, { provide: HttpService, useValue: spy }],
+    });
 
-//   it('should be created', () => {
-//     expect(service).toBeTruthy();
-//   });
-// });
+    service = TestBed.inject(BreedService);
+    httpServiceSpy = TestBed.inject(HttpService) as jasmine.SpyObj<HttpService>;
+  });
+
+  it('debería ser creado', () => {
+    expect(service).toBeTruthy();
+  });
+
+  it('debería obtener todas las razas', () => {
+    const expectedResponse: ApiResponse<Breed[]> = { data: [], message: 'ok', success: true };
+    httpServiceSpy.get.and.returnValue(of(expectedResponse));
+
+    service.getAllBreeds().subscribe((res) => {
+      expect(res).toEqual(expectedResponse);
+    });
+
+    expect(httpServiceSpy.get).toHaveBeenCalledWith('cats/breeds');
+  });
+
+  it('debería obtener una raza por id', () => {
+    const id = 'abc123';
+    const expectedResponse: ApiResponse<Breed | null> = { data: null, message: 'ok', success: true };
+    httpServiceSpy.get.and.returnValue(of(expectedResponse));
+
+    service.getBreedById(id).subscribe((res) => {
+      expect(res).toEqual(expectedResponse);
+    });
+
+    expect(httpServiceSpy.get).toHaveBeenCalledWith(`cats/breeds/${id}`);
+  });
+
+  it('debería buscar razas por query', () => {
+    const query = 'siamese';
+    const expectedResponse: ApiResponse<Breed[]> = { data: [], message: 'ok', success: true };
+    httpServiceSpy.get.and.returnValue(of(expectedResponse));
+
+    service.getBreedByQuery(query).subscribe((res) => {
+      expect(res).toEqual(expectedResponse);
+    });
+
+    expect(httpServiceSpy.get).toHaveBeenCalledWith(`cats/breeds/search?q=${query}`);
+  });
+
+  it('debería obtener imágenes por breedId', () => {
+    const id = 'siam123';
+    const expectedResponse: ApiResponse<Images[]> = { data: [], message: 'ok', success: true };
+    httpServiceSpy.get.and.returnValue(of(expectedResponse));
+
+    service.getImagesByBreedId(id).subscribe((res) => {
+      expect(res).toEqual(expectedResponse);
+    });
+
+    expect(httpServiceSpy.get).toHaveBeenCalledWith(`images/imagesbybreedid?breed_id=${id}`);
+  });
+});

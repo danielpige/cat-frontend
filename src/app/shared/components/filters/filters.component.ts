@@ -14,9 +14,7 @@ export class FiltersComponent implements OnInit {
   constructor(private breedSvc: BreedService, private loaderSvc: LoaderService) {}
 
   ngOnInit(): void {
-    // setTimeout(() => {
     this.search();
-    // }, 2000);
   }
 
   search(query: string = ''): void {

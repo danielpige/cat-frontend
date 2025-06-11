@@ -2,7 +2,7 @@
   <div class="col-md-4">
     <mat-form-field appearance="outline" class="w-100">
       <mat-label>Busqueda</mat-label>
-      <input #query matInput placeholder="¿Qué raza quieres buscar?" />
+      <input (keydown.enter)="search(query.value)" #query matInput placeholder="¿Qué raza quieres buscar?" />
     </mat-form-field>
   </div>
 

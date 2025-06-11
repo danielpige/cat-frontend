@@ -1,16 +1,52 @@
-// import { TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { LoaderService } from './loader.service';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { LoaderComponent } from '../../shared/components/loader/loader.component';
 
-// import { LoaderService } from './loader.service';
+describe('LoaderService', () => {
+  let service: LoaderService;
+  let matDialogSpy: jasmine.SpyObj<MatDialog>;
+  let dialogRefSpy: jasmine.SpyObj<MatDialogRef<LoaderComponent>>;
 
-// describe('LoaderService', () => {
-//   let service: LoaderService;
+  beforeEach(() => {
+    dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
+    matDialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    matDialogSpy.open.and.returnValue(dialogRefSpy);
 
-//   beforeEach(() => {
-//     TestBed.configureTestingModule({});
-//     service = TestBed.inject(LoaderService);
-//   });
+    TestBed.configureTestingModule({
+      providers: [LoaderService, { provide: MatDialog, useValue: matDialogSpy }],
+    });
 
-//   it('should be created', () => {
-//     expect(service).toBeTruthy();
-//   });
-// });
+    service = TestBed.inject(LoaderService);
+  });
+
+  it('debería crearse correctamente', () => {
+    expect(service).toBeTruthy();
+  });
+
+  it('debería mostrar el loader si no está ya abierto', () => {
+    service.show();
+    expect(matDialogSpy.open).toHaveBeenCalledWith(LoaderComponent, {
+      disableClose: true,
+      panelClass: 'transparent-dialog',
+      hasBackdrop: true,
+      backdropClass: 'dark-backdrop',
+    });
+  });
+
+  it('no debería abrir el loader si ya está abierto', () => {
+    service.show(); // primera vez
+    service.show(); // segunda vez
+    expect(matDialogSpy.open).toHaveBeenCalledTimes(1); // solo una vez
+  });
+
+  it('debería cerrar el loader si está abierto', () => {
+    service.show();
+    service.hide();
+    expect(dialogRefSpy.close).toHaveBeenCalled();
+  });
+
+  it('no debería lanzar error si hide() es llamado sin haber abierto el loader', () => {
+    expect(() => service.hide()).not.toThrow();
+  });
+});

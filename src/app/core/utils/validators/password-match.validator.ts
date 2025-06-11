@@ -11,7 +11,6 @@ export function passwordMatchValidator(passwordKey: string, confirmPasswordKey: 
     const confirmPassword = confirmPasswordControl.value;
 
     if (password !== confirmPassword) {
-      // Acceso con corchetes para evitar error de index signature
       confirmPasswordControl.setErrors({
         ...confirmPasswordControl.errors,
         ['passwordMismatch']: true,

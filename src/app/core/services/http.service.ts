@@ -58,8 +58,6 @@ export class HttpService {
     console.error('[HTTP ERROR]:', error);
 
     if (error?.status === 401) {
-      console.log(error);
-
       this.authSvc.logout();
       this.router.navigate(['/auth/login']);
     }
